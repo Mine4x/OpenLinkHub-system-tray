@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/Mine4x/OpenLinkHub-system-tray/src/config"
 )
@@ -21,6 +22,12 @@ type BatteryDevice struct {
 	DeviceType int    `json:"DeviceType"`
 }
 
+type BatteryIcons struct {
+	High   []byte `json:"High"`
+	Normal []byte `json:"Normal"`
+	Low    []byte `json:"Low"`
+}
+
 func getApiURL() (*string, error) {
 	conf, err := config.LoadConfig()
 	if err != nil {
@@ -30,6 +37,15 @@ func getApiURL() (*string, error) {
 	apiURL := fmt.Sprintf("%s/batteryStats", conf.APIURL)
 
 	return &apiURL, nil
+}
+
+func getIconPath() (*string, error) {
+	conf, err := config.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return &conf.IconsPath, nil
 }
 
 func GetBatteryStats() (*BatteryResponse, error) {
@@ -139,4 +155,31 @@ func GetLowestBattery() (*BatteryDevice, string, error) {
 	}
 
 	return lowestDevice, lowestSerial, nil
+}
+
+func GetIcons() (*BatteryIcons, error) {
+	Path, err := getIconPath()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get icon path: %w", err)
+	}
+
+	HighIcon, err := os.ReadFile(fmt.Sprintf("%s/battery_high.png", Path))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get icon path: %w", err)
+	}
+	NormalIcon, err := os.ReadFile(fmt.Sprintf("%s/battery_high.png", Path))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get icon path: %w", err)
+	}
+	LowIcon, err := os.ReadFile(fmt.Sprintf("%s/battery_high.png", Path))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get icon path: %w", err)
+	}
+
+	var batteryIcons BatteryIcons
+	batteryIcons.High = HighIcon
+	batteryIcons.Normal = NormalIcon
+	batteryIcons.Low = LowIcon
+
+	return &batteryIcons, nil
 }

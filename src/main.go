@@ -15,10 +15,15 @@ func main() {
 	batteryItem := tray.AddMenuItem("Battery: Loading...", "Device battery information", nil)
 	batteryItem.SetEnabled(false)
 
+	batteryIcons, err := battery.GetIcons()
+	if err != nil {
+		fmt.Printf("Error getting battery icons: %w", err)
+	}
+
 	tray.AddSeparator()
 
 	tray.AddMenuItem("Refresh", "Refresh battery information", func() {
-		updateBatteryInfo(tray, batteryItem) // FIXME: Delayed
+		updateBatteryInfo(tray, batteryItem, batteryIcons) // FIXME: Delayed
 	})
 
 	tray.AddSeparator()
@@ -30,14 +35,14 @@ func main() {
 	tray.OnReady(func() {
 		fmt.Println("System tray is ready!")
 
-		updateBatteryInfo(tray, batteryItem)
+		updateBatteryInfo(tray, batteryItem, batteryIcons)
 
 		go func() {
 			ticker := time.NewTicker(30 * time.Second)
 			defer ticker.Stop()
 
 			for range ticker.C {
-				updateBatteryInfo(tray, batteryItem)
+				updateBatteryInfo(tray, batteryItem, batteryIcons)
 			}
 		}()
 	})
@@ -50,7 +55,7 @@ func main() {
 	tray.Run()
 }
 
-func updateBatteryInfo(tray *systray.Tray, batteryItem *systray.MenuItem) {
+func updateBatteryInfo(tray *systray.Tray, batteryItem *systray.MenuItem, _batteryIcons *battery.BatteryIcons) {
 	stats, err := battery.GetBatteryStats()
 	if err != nil {
 		fmt.Printf("Error fetching battery stats: %v\n", err)

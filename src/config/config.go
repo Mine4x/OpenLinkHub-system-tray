@@ -7,7 +7,8 @@ import (
 )
 
 type Config struct {
-	APIURL string `json:"api_url"`
+	APIURL    string `json:"api_url"`
+	IconsPath string `json:"icons_path"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -25,7 +26,8 @@ func LoadConfig() (*Config, error) {
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		defaultConfig := Config{
-			APIURL: "http://127.0.0.1:27003/api",
+			APIURL:    "http://127.0.0.1:27003/api",
+			IconsPath: "$HOME/.config/OpenLinkHub-system-tray/icons",
 		}
 
 		data, _ := json.MarshalIndent(defaultConfig, "", "  ")
