@@ -1,0 +1,9 @@
+[Unit]
+Description=A systemtray app for OpenLinkHub
+
+[Service]
+ExecStart=/bin/OpenLinkHub-system-tray
+Restart=always
+
+[Install]
+WantedBy=default.target
