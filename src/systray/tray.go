@@ -1,7 +1,9 @@
 package systray
 
 import (
-	"github.com/getlantern/systray"
+	"reflect"
+
+	"github.com/energye/systray"
 )
 
 type Tray struct {
@@ -184,14 +186,38 @@ func (t *Tray) handleEvents() {
 	}
 }
 
+func getClickedChan(mi *systray.MenuItem) <-chan struct{} {
+	if mi == nil {
+		return nil
+	}
+	v := reflect.ValueOf(mi)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if !v.IsValid() || v.Kind() != reflect.Struct {
+		return nil
+	}
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		if f.Kind() == reflect.Chan {
+			if ch, ok := f.Interface().(<-chan struct{}); ok {
+				return ch
+			}
+		}
+	}
+	return nil
+}
+
 func (t *Tray) handleItemEvents(item *MenuItem) {
 	if item.systray == nil {
 		return
 	}
 
-	for range item.systray.ClickedCh {
-		if item.handler != nil {
-			item.handler()
+	if ch := getClickedChan(item.systray); ch != nil {
+		for range ch {
+			if item.handler != nil {
+				item.handler()
+			}
 		}
 	}
 
