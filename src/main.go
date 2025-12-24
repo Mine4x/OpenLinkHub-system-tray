@@ -18,13 +18,13 @@ func main() {
 	tray.AddSeparator()
 
 	tray.AddMenuItem("Refresh", "Refresh battery information", func() {
-		updateBatteryInfo(tray, batteryItem)
+		updateBatteryInfo(tray, batteryItem) // FIXME: Delayed
 	})
 
 	tray.AddSeparator()
 
 	tray.AddMenuItem("Quit", "Exit the application", func() {
-		tray.Quit()
+		tray.Quit() // FIXME: Delayed
 	})
 
 	tray.OnReady(func() {

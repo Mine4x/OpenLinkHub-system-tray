@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-)
 
-const apiURL = "http://127.0.0.1:27003/api/batteryStats"
+	"github.com/Mine4x/OpenLinkHub-system-tray/src/config"
+)
 
 type BatteryResponse struct {
 	Code   int                      `json:"code"`
@@ -21,8 +21,24 @@ type BatteryDevice struct {
 	DeviceType int    `json:"DeviceType"`
 }
 
+func getApiURL() (*string, error) {
+	conf, err := config.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	apiURL := fmt.Sprintf("%s/batteryStats", conf.APIURL)
+
+	return &apiURL, nil
+}
+
 func GetBatteryStats() (*BatteryResponse, error) {
-	resp, err := http.Get(apiURL)
+	apiURL, err := getApiURL()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get apiURL form config: %w", err)
+	}
+
+	resp, err := http.Get(*apiURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
