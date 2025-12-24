@@ -1,31 +1,53 @@
 package main
 
 import (
-	"github.com/getlantern/systray"
+	"fmt"
+	"time"
+
+	"github.com/Mine4x/OpenLinkHub-system-tray/src/systray"
 	"github.com/getlantern/systray/example/icon"
 )
 
 func main() {
-	systray.Run(onReady, onExit)
-}
+	tray := systray.New("OpenLinkHub", "OpenLinkHub-sytem-tray", icon.Data)
 
-func onReady() {
-	systray.SetIcon(icon.Data)
-	systray.SetTitle("My App")
-	systray.SetTooltip("My Go Application")
+	var testBool = false
 
-	mShow := systray.AddMenuItem("Show", "Show the window")
-	mQuit := systray.AddMenuItem("Quit", "Quit the application")
+	statusItem := tray.AddMenuItem("Status: True", "Current testBool value", nil)
+	statusItem.SetEnabled(false)
 
-	go func() {
-		for {
-			select {
-			case <-mShow.ClickedCh:
-			case <-mQuit.ClickedCh:
-				systray.Quit()
-			}
+	tray.AddSeparator()
+
+	tray.AddMenuItem("Change bool", "Change testBool", func() {
+		fmt.Println("Changing testBool!")
+		testBool = !testBool
+		if testBool == true {
+			statusItem.SetTitle("Status: True")
+		} else {
+			statusItem.SetTitle("Status: False")
 		}
-	}()
-}
+	})
 
-func onExit() {}
+	testMenu := tray.AddMenuItem("Test Menu", "Test", nil)
+
+	testMenu.AddSubMenuItem("Change bool", "Change testBool", nil)
+
+	tray.OnReady(func() {
+		fmt.Println("System tray is ready!")
+
+		go func() {
+			ticker := time.NewTicker(10 * time.Second)
+			defer ticker.Stop()
+
+			for range ticker.C {
+				fmt.Printf("Test")
+			}
+		}()
+	})
+
+	tray.OnExit(func() {
+		fmt.Printf("Exiting")
+	})
+
+	tray.Run()
+}
