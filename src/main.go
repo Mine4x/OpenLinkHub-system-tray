@@ -4,50 +4,98 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Mine4x/OpenLinkHub-system-tray/src/battery"
 	"github.com/Mine4x/OpenLinkHub-system-tray/src/systray"
 	"github.com/getlantern/systray/example/icon"
 )
 
 func main() {
-	tray := systray.New("OpenLinkHub", "OpenLinkHub-sytem-tray", icon.Data)
+	tray := systray.New("OpenLinkHub", "OpenLinkHub-system-tray", icon.Data)
 
-	var testBool = false
-
-	statusItem := tray.AddMenuItem("Status: True", "Current testBool value", nil)
-	statusItem.SetEnabled(false)
+	batteryItem := tray.AddMenuItem("Battery: Loading...", "Device battery information", nil)
+	batteryItem.SetEnabled(false)
 
 	tray.AddSeparator()
 
-	tray.AddMenuItem("Change bool", "Change testBool", func() {
-		fmt.Println("Changing testBool!")
-		testBool = !testBool
-		if testBool == true {
-			statusItem.SetTitle("Status: True")
-		} else {
-			statusItem.SetTitle("Status: False")
-		}
+	tray.AddMenuItem("Refresh", "Refresh battery information", func() {
+		updateBatteryInfo(tray, batteryItem)
 	})
 
-	testMenu := tray.AddMenuItem("Test Menu", "Test", nil)
+	tray.AddSeparator()
 
-	testMenu.AddSubMenuItem("Change bool", "Change testBool", nil)
+	tray.AddMenuItem("Quit", "Exit the application", func() {
+		tray.Quit()
+	})
 
 	tray.OnReady(func() {
 		fmt.Println("System tray is ready!")
 
+		updateBatteryInfo(tray, batteryItem)
+
 		go func() {
-			ticker := time.NewTicker(10 * time.Second)
+			ticker := time.NewTicker(30 * time.Second)
 			defer ticker.Stop()
 
 			for range ticker.C {
-				fmt.Printf("Test")
+				updateBatteryInfo(tray, batteryItem)
 			}
 		}()
 	})
 
 	tray.OnExit(func() {
-		fmt.Printf("Exiting")
+		fmt.Println("Cleaning up...")
 	})
 
+	fmt.Println("Starting OpenLinkHub system tray...")
 	tray.Run()
+}
+
+func updateBatteryInfo(tray *systray.Tray, batteryItem *systray.MenuItem) {
+	stats, err := battery.GetBatteryStats()
+	if err != nil {
+		fmt.Printf("Error fetching battery stats: %v\n", err)
+		batteryItem.SetTitle("Battery: Error")
+		tray.SetTooltip("OpenLinkHub - Error fetching battery")
+		return
+	}
+
+	if len(stats.Data) == 0 {
+		batteryItem.SetTitle("Battery: No devices")
+		tray.SetTooltip("OpenLinkHub - No devices found")
+		fmt.Println("No devices found")
+		return
+	}
+
+	var lowestDevice *battery.BatteryDevice
+	var lowestSerial string
+	lowestLevel := 101
+
+	for serial, device := range stats.Data {
+		if device.Level < lowestLevel {
+			lowestLevel = device.Level
+			deviceCopy := device
+			lowestDevice = &deviceCopy
+			lowestSerial = serial
+		}
+	}
+
+	if lowestDevice != nil {
+		title := fmt.Sprintf("🔋 %s: %d%%", lowestDevice.Device, lowestDevice.Level)
+		batteryItem.SetTitle(title)
+
+		tooltip := "OpenLinkHub Devices:\n"
+		for serial, device := range stats.Data {
+			tooltip += fmt.Sprintf("%s: %d%%\n", device.Device, device.Level)
+			if serial == lowestSerial {
+				tooltip += "(lowest)"
+			}
+		}
+		tray.SetTooltip(tooltip)
+
+		fmt.Printf("Battery updated: %s at %d%%\n", lowestDevice.Device, lowestDevice.Level)
+
+		if lowestDevice.Level <= 20 {
+			fmt.Printf("Low battery warning: %s at %d%%\n", lowestDevice.Device, lowestDevice.Level)
+		}
+	}
 }
