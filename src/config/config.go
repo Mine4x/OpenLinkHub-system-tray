@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -27,7 +28,7 @@ func LoadConfig() (*Config, error) {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		defaultConfig := Config{
 			APIURL:    "http://127.0.0.1:27003/api",
-			IconsPath: "$HOME/.config/OpenLinkHub-system-tray/icons",
+			IconsPath: fmt.Sprintf("%s/icons", appDir),
 		}
 
 		data, _ := json.MarshalIndent(defaultConfig, "", "  ")

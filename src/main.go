@@ -55,7 +55,7 @@ func main() {
 	tray.Run()
 }
 
-func updateBatteryInfo(tray *systray.Tray, batteryItem *systray.MenuItem, _batteryIcons *battery.BatteryIcons) {
+func updateBatteryInfo(tray *systray.Tray, batteryItem *systray.MenuItem, batteryIcons *battery.BatteryIcons) {
 	stats, err := battery.GetBatteryStats()
 	if err != nil {
 		fmt.Printf("Error fetching battery stats: %v\n", err)

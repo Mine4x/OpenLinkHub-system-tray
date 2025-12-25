@@ -163,15 +163,15 @@ func GetIcons() (*BatteryIcons, error) {
 		return nil, fmt.Errorf("failed to get icon path: %w", err)
 	}
 
-	HighIcon, err := os.ReadFile(fmt.Sprintf("%s/battery_high.png", Path))
+	HighIcon, err := os.ReadFile(fmt.Sprintf("%s/battery_high.png", *Path))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get icon path: %w", err)
 	}
-	NormalIcon, err := os.ReadFile(fmt.Sprintf("%s/battery_high.png", Path))
+	NormalIcon, err := os.ReadFile(fmt.Sprintf("%s/battery_normal.png", *Path))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get icon path: %w", err)
 	}
-	LowIcon, err := os.ReadFile(fmt.Sprintf("%s/battery_high.png", Path))
+	LowIcon, err := os.ReadFile(fmt.Sprintf("%s/battery_low.png", *Path))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get icon path: %w", err)
 	}
