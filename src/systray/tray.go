@@ -122,6 +122,25 @@ func (m *MenuItem) SetHandler(handler func()) {
 	m.handler = handler
 }
 
+func (m *MenuItem) Quit() {
+	if m.systray != nil {
+		m.systray.Hide()
+	}
+	m.handler = nil
+	m.children = nil
+}
+
+func (m *MenuItem) QuitRecursive() {
+	for _, child := range m.children {
+		child.QuitRecursive()
+	}
+	if m.systray != nil {
+		m.systray.Hide()
+	}
+	m.handler = nil
+	m.children = nil
+}
+
 func (t *Tray) OnReady(fn func()) {
 	t.onReady = fn
 }

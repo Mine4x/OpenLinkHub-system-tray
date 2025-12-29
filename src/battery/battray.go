@@ -6,14 +6,16 @@ import (
 	"time"
 
 	"github.com/Mine4x/OpenLinkHub-system-tray/src/systray"
+	"github.com/getlantern/systray/example/icon"
 )
 
 type traysEntry struct {
 	serial      string
-	tray        systray.Tray
 	batteryItem systray.MenuItem
 	updated     bool
 }
+
+var mainTray *systray.Tray
 
 func fetchDevices() (*BatteryResponse, error) {
 	stats, err := GetBatteryStats()
@@ -29,40 +31,28 @@ func fetchDevices() (*BatteryResponse, error) {
 func handleDevice(serial string, device BatteryDevice, trays *[]traysEntry) error {
 	battString := fmt.Sprintf("🔋 %s: %d%%", device.Device, device.Level)
 
-	icons, err := GetIcons()
-	if err != nil {
-		return err
+	if mainTray == nil {
+		mainTray = systray.New("OpenLinkHub system tray", "OpenLinkHub devices", icon.Data)
+		go mainTray.Run()
 	}
-
 	for i := range *trays {
 		entry := &(*trays)[i]
 		if entry.serial == serial {
-			if device.Level >= 80 {
-				entry.tray.SetIcon(icons.High)
-			} else if device.Level >= 35 {
-				entry.tray.SetIcon(icons.Normal)
-			} else {
-				entry.tray.SetIcon(icons.Low)
-			}
-			entry.tray.SetTitle(battString)
 			entry.batteryItem.SetTitle(battString)
 			entry.updated = true
+
 			return nil
 		}
 	}
 
-	newTray := systray.New(battString, "OpenLinkHub device", icons.Normal)
-	batteryItem := newTray.AddMenuItem(battString, "", nil)
+	batteryItem := mainTray.AddMenuItem(battString, "", nil)
 	batteryItem.SetEnabled(false)
 
 	*trays = append(*trays, traysEntry{
 		serial:      serial,
-		tray:        *newTray,
 		batteryItem: *batteryItem,
 		updated:     true,
 	})
-
-	go newTray.Run()
 
 	return nil
 }
@@ -70,7 +60,7 @@ func handleDevice(serial string, device BatteryDevice, trays *[]traysEntry) erro
 func cleanTrays(trays *[]traysEntry) {
 	for i := 0; i < len(*trays); {
 		if !(*trays)[i].updated {
-			(*trays)[i].tray.Quit()
+			(*trays)[i].batteryItem.Quit()
 			*trays = append((*trays)[:i], (*trays)[i+1:]...)
 		} else {
 			i++
@@ -81,6 +71,11 @@ func cleanTrays(trays *[]traysEntry) {
 func updateBattray(trays *[]traysEntry) {
 	for i := range *trays {
 		(*trays)[i].updated = false
+	}
+
+	icons, err := GetIcons()
+	if err != nil {
+		fmt.Printf("Error getting icons: %v", err)
 	}
 
 	stats, err := fetchDevices()
@@ -94,6 +89,24 @@ func updateBattray(trays *[]traysEntry) {
 	}
 
 	cleanTrays(trays)
+
+	var deviceCount int = 0
+	var totalLevel int = 0
+
+	for _, device := range stats.Data {
+		deviceCount++
+		totalLevel += device.Level
+	}
+
+	totalLevel = totalLevel / deviceCount
+
+	if totalLevel >= 75 {
+		mainTray.SetIcon(icons.High)
+	} else if totalLevel >= 25 {
+		mainTray.SetIcon(icons.Normal)
+	} else {
+		mainTray.SetIcon(icons.Low)
+	}
 }
 
 func StartBatteryModule() {
